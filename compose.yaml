@@ -1,0 +1,52 @@
+name: test-task-0525
+services:
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx-cont-test0525
+    ports:
+      - "${SERVER_PORT}:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php82-fpm
+    networks:
+      - nginx-php82-mysql8
+
+  php82-fpm:
+    build:
+      args:
+        PUID: ${PUID}
+        PGID: ${PGID}
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+    container_name: php82-cont-test0525
+    command: ["php-fpm"]
+    ports:
+      - "9001:9000"
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - nginx-php82-mysql8
+
+  mysql8:
+    image: mysql:8.0
+    container_name: mysql8-cont-test0525
+    ports:
+      - "33306:3306"
+    volumes:
+      - ./docker/backups:/docker-entrypoint-initdb.d
+      - ./docker/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - nginx-php82-mysql8
+
+networks:
+  nginx-php82-mysql8:
+
+volumes:
+  mysql:
