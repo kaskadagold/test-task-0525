@@ -1,5 +1,6 @@
 <?php
 
+use App\Entities\StatusOrder;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\WarehousesController;

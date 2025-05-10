@@ -2,17 +2,18 @@
 
 namespace App\Entities;
 
-use JsonSerializable;
-
-enum StatusOrder: string implements JsonSerializable
+class StatusOrder
 {
-    case ACTIVE = 'active';
-    case COMPLETED = 'completed';
-    case CANCELED = 'canceled';
+    public const ACTIVE = 'active';
+    public const COMPLETED = 'completed';
+    public const CANCELED = 'canceled';
 
-    /** @return string  */
-    public function jsonSerialize(): string
+    public static function getAllStatuses(): array
     {
-        return $this->value;
+        $statuses['ACTIVE'] = self::ACTIVE;
+        $statuses['COMPLETED'] = self::COMPLETED;
+        $statuses['CANCELED'] = self::CANCELED;
+
+        return $statuses;
     }
 }

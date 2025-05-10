@@ -45,7 +45,7 @@ class DatabaseSeeder extends Seeder
     /**
      * Fill the pivot table `stocks` using the existing data of products and warehouses
      *
-     * @param Collection $products
+     * @param \Illuminate\Support\Collection $products
      * @param Collection $warehouses
      * @return void
      */
@@ -73,7 +73,7 @@ class DatabaseSeeder extends Seeder
     /**
      * Fill the `order_items` table using the existing data of orders, products, and warehouses
      *
-     * @param Collection $orders
+     * @param \Illuminate\Support\Collection $orders
      * @return void
      */
     private function fillOrderItems(Collection $orders): void

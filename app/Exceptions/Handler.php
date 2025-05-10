@@ -19,12 +19,19 @@ class Handler extends ExceptionHandler
     ];
 
     /**
-     * Register the exception handling callbacks for the application.
+     * Render an exception into an HTTP response.
      */
-    public function register(): void
+    public function render($request, Throwable $exception)
     {
-        $this->reportable(function (Throwable $e) {
-            //
-        });
+        if ($request->expectsJson()) {
+            // Return custom JSON-response
+            return response()->json([
+                'success' => false,
+                'error' => $exception->getMessage()
+            ]);
+        }
+
+        // Else, call the parent render-method
+        return parent::render($request, $exception);
     }
 }
