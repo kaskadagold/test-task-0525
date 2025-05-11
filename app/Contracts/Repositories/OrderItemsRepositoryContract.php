@@ -44,6 +44,7 @@ interface OrderItemsRepositoryContract
      * Find a single order item entity by the order id and the product id
      *
      * @param int $orderId
+     * @throws \App\Exceptions\OrderItemNotFoundException
      * @return \App\Models\OrderItem
      */
     public function getByKey(int $orderId, int $productId): OrderItem;

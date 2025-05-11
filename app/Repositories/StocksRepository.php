@@ -13,11 +13,23 @@ class StocksRepository implements StocksRepositoryContract
     {
     }
 
+    /**
+     * Get the repository model
+     *
+     * @return \App\Models\Stock
+     */
     public function getModel(): Stock
     {
         return $this->model;
     }
 
+    /**
+     * Find the list of stock entities
+     *
+     * @param int $warehouseId
+     * @param null|array $products
+     * @return \Illuminate\Support\Collection
+     */
     #[Override]
     public function getItems(int $warehouseId, ?array $products = null): Collection
     {

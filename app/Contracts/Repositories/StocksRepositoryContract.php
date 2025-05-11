@@ -10,7 +10,7 @@ interface StocksRepositoryContract
      * Find the list of stock entities
      *
      * @param int $warehouseId
-     * @param mixed $products
+     * @param null|array $products
      * @return \Illuminate\Support\Collection
      */
     public function getItems(int $warehouseId, ?array $products = null): Collection;

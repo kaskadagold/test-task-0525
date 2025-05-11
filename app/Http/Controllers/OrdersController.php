@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Contracts\Repositories\OrderItemsRepositoryContract;
 use App\Contracts\Repositories\OrdersRepositoryContract;
-use App\Contracts\Repositories\ProductsRepositoryContract;
-use App\Contracts\Repositories\StocksRepositoryContract;
 use App\Contracts\Services\ChangeStatusOrderServiceContract;
 use App\Contracts\Services\StoreOrderServiceContract;
 use App\Contracts\Services\UpdateOrderServiceContract;
+use App\DTO\FilterOrdersDTO;
 use App\Entities\StatusOrder;
 use App\Exceptions\WrongOrderStatus;
+use App\Http\Requests\GetOrdersRequest;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
+use App\Http\Resources\OrderCollection;
 use App\Http\Resources\OrderResource;
 use Illuminate\Http\JsonResponse;
 
@@ -20,18 +20,32 @@ class OrdersController extends Controller
 {
     public function __construct(
         private readonly OrdersRepositoryContract $repo,
-        private readonly StocksRepositoryContract $stockRepo,
-        private readonly ProductsRepositoryContract $prodRepo,
-        private readonly OrderItemsRepositoryContract $oiRepo,
     ) {
     }
 
     /**
-     * Display a listing of the resource.
+     * Display a list of orders with applying filters and pagination.
+     *
+     * @param \App\Http\Requests\GetOrdersRequest $request
+     * @return JsonResponse
      */
-    public function index()
+    public function index(GetOrdersRequest $request): JsonResponse
     {
-        //
+        $fields = $request->validated();
+        $fields['filters'] ??= [];
+        $page = $request->get('page');
+
+        $filterOrdersDTO = new FilterOrdersDTO($fields['filters']);
+
+        $orders = $this->repo->paginate(
+            filters: $filterOrdersDTO,
+            perPage: $fields['perPage'] ?? 5,
+            page: $page ?? 1,
+            relations: ['warehouse', 'orderItems']
+        );
+        $result = new OrderCollection($orders);
+
+        return new JsonResponse(['success' => true, 'data' => $result]);
     }
 
     /**

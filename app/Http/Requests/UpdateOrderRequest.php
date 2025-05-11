@@ -22,14 +22,4 @@ class UpdateOrderRequest extends FormRequest
             'products.*.count' => ['required', 'integer'],
         ];
     }
-
-    protected function prepareForValidation(): void
-    {
-        if (isset($this->products)) {
-            $this->merge([
-                'products' => $this->products,
-            ]);
-        }
-
-    }
 }

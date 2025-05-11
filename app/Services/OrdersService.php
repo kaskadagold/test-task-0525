@@ -28,6 +28,12 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
     ) {
     }
 
+    /**
+     * Create the order
+     *
+     * @param array $fields
+     * @return \App\Models\Order|null
+     */
     #[Override]
     public function create(array $fields): ?Order
     {
@@ -52,6 +58,13 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
         return $order;
     }
 
+    /**
+     * Update the order.
+     *
+     * @param \App\Models\Order $order
+     * @param array $fields
+     * @return Order
+     */
     #[Override]
     public function update(Order $order, array $fields): Order
     {
@@ -95,6 +108,12 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
         return $order;
     }
 
+    /**
+     * Cancel the order.
+     *
+     * @param \App\Models\Order $order
+     * @return Order
+     */
     #[Override]
     public function cancelOrder(Order $order): Order
     {
@@ -121,6 +140,12 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
         return $order;
     }
 
+    /**
+     * Renew the order.
+     *
+     * @param \App\Models\Order $order
+     * @return Order
+     */
     #[Override]
     public function renewOrder(Order $order): Order
     {

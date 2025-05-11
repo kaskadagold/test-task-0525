@@ -19,17 +19,11 @@ class StoreOrderRequest extends FormRequest
         return [
             'customer' => ['required', 'string'],
             'warehouse_id' => ['required', 'integer'],
-            'products' => ['required', new UniqueOrderItem],
+
+            'products' => ['required', 'array', new UniqueOrderItem],
             'products.*' => ['required', 'array:id,count'],
             'products.*.id' => ['required', 'integer'],
             'products.*.count' => ['required', 'integer'],
         ];
-    }
-
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'products' => $this->products,
-        ]);
     }
 }

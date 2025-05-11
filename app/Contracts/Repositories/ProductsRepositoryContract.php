@@ -20,6 +20,7 @@ interface ProductsRepositoryContract
      *
      * @param int $id
      * @param array $relations
+     * @throws \App\Exceptions\ProductNotFoundException
      * @return \App\Models\Product
      */
     public function getById(int $id, array $relations = []): Product;
