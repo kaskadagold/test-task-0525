@@ -7,6 +7,8 @@ class FilterEntity
     private ?string $order = null;
     private ?string $operator = null;
     private ?string $value = null;
+    private ?string $value_start = null;
+    private ?string $value_end = null;
 
     public function __construct(array $properties = [])
     {
@@ -40,5 +42,15 @@ class FilterEntity
     public function getValue(): ?string
     {
         return $this->value;
+    }
+
+    public function getValueStart(): ?string
+    {
+        return $this->value_start;
+    }
+
+    public function getValueEnd(): ?string
+    {
+        return $this->value_end;
     }
 }

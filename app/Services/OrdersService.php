@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\Repositories\OrderItemsRepositoryContract;
 use App\Contracts\Repositories\OrdersRepositoryContract;
+use App\Contracts\Repositories\ProductFlowsRepositoryContract;
 use App\Contracts\Repositories\ProductsRepositoryContract;
 use App\Contracts\Repositories\StocksRepositoryContract;
 use App\Contracts\Services\ChangeStatusOrderServiceContract;
@@ -13,6 +14,7 @@ use App\Entities\StatusOrder;
 use App\Exceptions\NotEnoughStockException;
 use App\Exceptions\StockNotFoundException;
 use App\Models\Order;
+use App\Models\ProductFlow;
 use App\Models\Stock;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +27,7 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
         private readonly StocksRepositoryContract $stockRepo,
         private readonly ProductsRepositoryContract $prodRepo,
         private readonly OrderItemsRepositoryContract $oiRepo,
+        private readonly ProductFlowsRepositoryContract $flowRepo,
     ) {
     }
 
@@ -52,7 +55,7 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
             $order = $this->repo->create($fields);
 
             /* Update stocks and fill order items */
-            $this->addOrderItems($products, $stocks, $order);
+            $this->addOrderItems($products, $stocks, $order, ProductFlow::ACTION_CREATE);
         });
 
         return $order;
@@ -89,11 +92,11 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
                 $stocks = $this->stockRepo->getItems($order->warehouse_id);
 
                 /* Update the existing items and the corresponding stocks */
-                $this->updateOrderItems($common, $stocks, $order);
+                $this->updateOrderItems($common, $stocks, $order, ProductFlow::ACTION_UPDATE);
                 /* Fill new order items and update the corresponding stocks */
-                $this->addOrderItems($add, $stocks, $order);
+                $this->addOrderItems($add, $stocks, $order, ProductFlow::ACTION_UPDATE);
                 /* Remove the required items and update the corresponding stocks */
-                $this->removeOrderItems($remove, $stocks, $order);
+                $this->removeOrderItems($remove, $stocks, $order, ProductFlow::ACTION_UPDATE);
 
                 unset($fields['products']);
             }
@@ -132,6 +135,9 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
                 } else {
                     $product->stocks()->attach($order->warehouse_id, ['stock' => $count]);
                 }
+
+                /* Add the corresponding product flow */
+                $this->addProductFlow($order, $stock?->stock, ProductFlow::ACTION_CANCEL, $prodId, -$count);
             }
 
             $order = $this->repo->update($order, ['status' => StatusOrder::CANCELED]);
@@ -162,6 +168,9 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
                 $product = $this->prodRepo->getById($prodId);
                 /* Update the corresponding stock */
                 $product->stocks()->updateExistingPivot($order->warehouse_id, ['stock' => $stock->stock - $count]);
+
+                /* Add the corresponding product flow */
+                $this->addProductFlow($order, $stock?->stock, ProductFlow::ACTION_RENEW, $prodId, $count);
             }
 
             $order = $this->repo->update($order, ['status' => StatusOrder::ACTIVE]);
@@ -224,13 +233,11 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
      * @param array $products
      * @param \Illuminate\Support\Collection $stocks
      * @param \App\Models\Order $order
-     *
-     * @throws \App\Exceptions\StockNotFoundException
-     * @throws \App\Exceptions\NotEnoughStockException
+     * @param string $action
      *
      * @return void
      */
-    private function addOrderItems(array $products, Collection $stocks, Order $order): void
+    private function addOrderItems(array $products, Collection $stocks, Order $order, string $action): void
     {
         foreach ($products as $prodId => $count) {
             $stock = $stocks->where('product_id', '=', $prodId)->first();
@@ -247,6 +254,9 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
                 'product_id' => $prodId,
                 'count' => $count,
             ]);
+
+            /* Add the corresponding product flow */
+            $this->addProductFlow($order, $stock?->stock, $action, $prodId, $count);
         }
     }
 
@@ -256,13 +266,11 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
      * @param array $common
      * @param \Illuminate\Support\Collection $stocks
      * @param \App\Models\Order $order
-     *
-     * @throws \App\Exceptions\StockNotFoundException
-     * @throws \App\Exceptions\NotEnoughStockException
+     * @param string $action
      *
      * @return void
      */
-    private function updateOrderItems(array $common, Collection $stocks, Order $order): void
+    private function updateOrderItems(array $common, Collection $stocks, Order $order, string $action): void
     {
         foreach ($common as $prodId => $diffCount) {
             $stock = $stocks->where('product_id', '=', $prodId)->first();
@@ -284,6 +292,9 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
 
             $orderItem = $this->oiRepo->getByKey($order->id, $prodId);
             $orderItem = $this->oiRepo->update($orderItem, ['count' => $orderItem->count + $diffCount]);
+
+            /* Add the corresponding product flow */
+            $this->addProductFlow($order, $stock?->stock, $action, $prodId, $diffCount);
         }
     }
 
@@ -293,10 +304,11 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
      * @param array $remove
      * @param \Illuminate\Support\Collection $stocks
      * @param \App\Models\Order $order
+     * @param string $action
      *
      * @return void
      */
-    private function removeOrderItems(array $remove, Collection $stocks, Order $order): void
+    private function removeOrderItems(array $remove, Collection $stocks, Order $order, string $action): void
     {
         foreach ($remove as $prodId => $count) {
             $stock = $stocks->where('product_id', '=', $prodId)->first();
@@ -312,6 +324,9 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
 
             $orderItem = $this->oiRepo->getByKey($order->id, $prodId);
             $this->oiRepo->delete($orderItem);
+
+            /* Add the corresponding product flow */
+            $this->addProductFlow($order, $stock?->stock, $action, $prodId, -$count);
         }
     }
 
@@ -339,5 +354,34 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
         if ($stock->stock < $count) {
             throw new NotEnoughStockException($prodId, $warehouseId);
         }
+    }
+
+    /**
+     * Add new product flow
+     *
+     * @param \App\Models\Order $order
+     * @param int|null $stock
+     * @param string $action
+     * @param int $prodId
+     * @param int $count
+     *
+     * @return void
+     */
+    private function addProductFlow(Order $order, int|null $stock, string $action, int $prodId, int $count): void
+    {
+        $fields['source_type'] = ProductFlow::TYPE_ORDER;
+        $fields['source_id'] = $order->id;
+        $fields['source_action'] = $action;
+        $fields['warehouse_id'] = $order->warehouse_id;
+
+        $fields['product_id'] = $prodId;
+        $fields['old_value'] = $stock;
+
+        $fields['new_value'] = ($fields['old_value'] ?? 0) - $count;
+        $fields['diff'] = -$count;
+
+        $fields['created_at'] = now()->toDateTimeString();
+
+        $this->flowRepo->create($fields);
     }
 }

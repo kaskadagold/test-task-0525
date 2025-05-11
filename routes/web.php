@@ -2,6 +2,7 @@
 
 use App\Entities\StatusOrder;
 use App\Http\Controllers\OrdersController;
+use App\Http\Controllers\ProductFlowsController;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\WarehousesController;
 use Illuminate\Support\Facades\Route;
@@ -26,3 +27,4 @@ Route::patch('/orders/{order}/cancel',[OrdersController::class, 'cancel'])->name
 
 Route::get('/warehouses', [WarehousesController::class, 'index'])->name('warehouses.index');
 Route::get('/products', [ProductsController::class, 'index'])->name('products.index');
+Route::get('/flows', [ProductFlowsController::class, 'index']);
