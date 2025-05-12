@@ -35,4 +35,18 @@ class WarehousesRepository implements WarehousesRepositoryContract
             ->orderBy('id')
             ->get();
     }
+
+    /**
+     * Check if the required warehouse exists
+     *
+     * @param int $id
+     * @return bool
+     */
+    #[Override]
+    public function checkIfExist(int $id): bool
+    {
+        return $this->getModel()
+            ->where('id', '=', $id)
+            ->exists();
+    }
 }

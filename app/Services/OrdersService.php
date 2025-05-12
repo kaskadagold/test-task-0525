@@ -7,12 +7,14 @@ use App\Contracts\Repositories\OrdersRepositoryContract;
 use App\Contracts\Repositories\ProductFlowsRepositoryContract;
 use App\Contracts\Repositories\ProductsRepositoryContract;
 use App\Contracts\Repositories\StocksRepositoryContract;
+use App\Contracts\Repositories\WarehousesRepositoryContract;
 use App\Contracts\Services\ChangeStatusOrderServiceContract;
 use App\Contracts\Services\StoreOrderServiceContract;
 use App\Contracts\Services\UpdateOrderServiceContract;
 use App\Entities\StatusOrder;
 use App\Exceptions\NotEnoughStockException;
 use App\Exceptions\StockNotFoundException;
+use App\Exceptions\WarehouseNotFoundException;
 use App\Models\Order;
 use App\Models\ProductFlow;
 use App\Models\Stock;
@@ -28,6 +30,7 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
         private readonly ProductsRepositoryContract $prodRepo,
         private readonly OrderItemsRepositoryContract $oiRepo,
         private readonly ProductFlowsRepositoryContract $flowRepo,
+        private readonly WarehousesRepositoryContract $whRepo,
     ) {
     }
 
@@ -35,6 +38,7 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
      * Create the order
      *
      * @param array $fields
+     * @throws WarehouseNotFoundException
      * @return \App\Models\Order|null
      */
     #[Override]
@@ -43,6 +47,11 @@ class OrdersService implements StoreOrderServiceContract, UpdateOrderServiceCont
         $order = null;
 
         DB::transaction( function () use ($fields, &$order) {
+            $warehouseExist = $this->whRepo->checkIfExist($fields['warehouse_id']);
+            if (!$warehouseExist) {
+                throw new WarehouseNotFoundException($fields['warehouse_id']);
+            }
+
             /* Get the list of required products' id */
             $products = [];
             foreach ($fields['products'] as $item) {
