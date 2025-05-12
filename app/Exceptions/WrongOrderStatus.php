@@ -23,7 +23,7 @@ class WrongOrderStatus extends Exception
             };
         } elseif ($status === StatusOrder::CANCELED) {
             $message = match ($action) {
-                'complete' => 'Нельзя отменить отменённый заказ',
+                'complete' => 'Нельзя завершить отменённый заказ',
                 'cancel' => 'Заказ уже был отменён',
                 'update' => 'Нельзя обновить отменённый заказ',
             };

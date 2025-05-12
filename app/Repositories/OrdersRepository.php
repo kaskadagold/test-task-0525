@@ -125,12 +125,16 @@ class OrdersRepository implements OrdersRepositoryContract
             $operator = $filter->getOperator();
             $value = $filter->getValue();
             $order = $filter->getOrder();
+            $valueStart = $filter->getValueStart();
+            $valueEnd = $filter->getValueEnd();
 
             if ($operator !== null) {
                 if ($operator === 'is_null') {
                     $query = $query->whereNull($field);
                 } elseif ($operator === 'is_not_null') {
                     $query = $query->whereNotNull($field);
+                } elseif ($operator === 'between' && $valueStart !== null && $valueEnd !== null) {
+                    $query = $query->whereBetween($field, [$valueStart, $valueEnd]);
                 } elseif ($value !== null) {
                     $query = $query->where($field, $operator, $value);
                 }

@@ -12,4 +12,12 @@ interface WarehousesRepositoryContract
      * @return \Illuminate\Support\Collection
      */
     public function getItems(): Collection;
+
+    /**
+     * Check if the required warehouse exists
+     *
+     * @param int $id
+     * @return bool
+     */
+    public function checkIfExist(int $id): bool;
 }

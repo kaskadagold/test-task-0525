@@ -4,11 +4,13 @@ namespace App\Providers;
 
 use App\Contracts\Repositories\OrderItemsRepositoryContract;
 use App\Contracts\Repositories\OrdersRepositoryContract;
+use App\Contracts\Repositories\ProductFlowsRepositoryContract;
 use App\Contracts\Repositories\ProductsRepositoryContract;
 use App\Contracts\Repositories\StocksRepositoryContract;
 use App\Contracts\Repositories\WarehousesRepositoryContract;
 use App\Repositories\OrderItemsRepository;
 use App\Repositories\OrdersRepository;
+use App\Repositories\ProductFlowsRepository;
 use App\Repositories\ProductsRepository;
 use App\Repositories\StocksRepository;
 use App\Repositories\WarehousesRepository;
@@ -26,6 +28,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->singleton(OrdersRepositoryContract::class, OrdersRepository::class);
         $this->app->singleton(StocksRepositoryContract::class, StocksRepository::class);
         $this->app->singleton(OrderItemsRepositoryContract::class, OrderItemsRepository::class);
+        $this->app->singleton(ProductFlowsRepositoryContract::class, ProductFlowsRepository::class);
     }
 
     /**
